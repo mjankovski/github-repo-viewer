@@ -1,26 +1,44 @@
-import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import { useState } from 'react';
+import { AppHeader, UsernameForm, RepositoryList } from './components';
+import { IRepositoryData } from "./types";
+import { CircularProgress } from '@mui/material';
+import GithubApiController from './api/github/GithubApiController';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    const [repoItems, setRepoItems] = useState<Array<IRepositoryData>>();
+    const [showSpinner, setShowSpinner] = useState(false);
+    const controller = new GithubApiController();
+
+    const handleSubmit = async (username: string) => {
+        const isUsernameInputEmpty = username === "";
+
+        if(isUsernameInputEmpty) {
+            setRepoItems(undefined);
+            return;
+        }
+
+        setShowSpinner(true);
+
+        controller.loadUsername(username);
+        const repos = await controller.getSortedUserRepos();
+        setRepoItems(repos);
+        
+        setShowSpinner(false);
+    };
+
+    return (
+        <div className="App">
+            <AppHeader />
+            <UsernameForm submitFn={handleSubmit} />
+            {
+                showSpinner ? 
+                <CircularProgress /> 
+                :
+                <RepositoryList repositories={repoItems} />
+            }
+        </div>
+    );
 }
 
 export default App;
